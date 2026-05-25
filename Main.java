@@ -1,159 +1,175 @@
 import java.util.Scanner;
 
 public class Main {
-    static Scanner scanner = new Scanner(System.in);
-    static Quarto[] quartos = new Quarto[5];
-    static Reserva[] reservas = new Reserva[50];
-    static int totalReservas = 0;
 
+    // ── Configurações globais ──────────────────────────────
+    static final int     CAPACIDADE  = 10;
+    static Reserva[]     reservas    = new Reserva[CAPACIDADE];
+    static int           total       = 0;
+    static Scanner       scanner     = new Scanner(System.in);
+
+    // ══════════════════════════════════════════════════════
     public static void main(String[] args) {
-
-        // Quartos pré-cadastrados
-        quartos[0] = new Quarto(101, "Solteiro",  150.00);
-        quartos[1] = new Quarto(102, "Solteiro",  150.00);
-        quartos[2] = new Quarto(201, "Casal",     250.00);
-        quartos[3] = new Quarto(202, "Casal",     250.00);
-        quartos[4] = new Quarto(301, "Suite",     500.00);
-
         int opcao;
         do {
             exibirMenu();
-            opcao = scanner.nextInt();
+            opcao = lerInt();
 
             switch (opcao) {
-                case 1: fazerReserva();     break;
-                case 2: cancelarReserva();  break;
-                case 3: listarReservas();   break;
-                case 4: listarQuartos();    break;
-                case 5: System.out.println("\nObrigado por usar o sistema. Até logo!"); break;
-                default: System.out.println("\nOpção inválida! Tente novamente.");
+                case 1: novaReserva();              break;
+                case 2: listarReservas();           break;
+                case 3: buscarPorNome();            break;
+                case 4: ordenarPorDias();           break;
+                case 5: mensagemSaida();            break;
+                default: System.out.println("\n⚠  Opção inválida! Tente novamente.");
             }
-
         } while (opcao != 5);
 
         scanner.close();
     }
 
+    // ── Menu principal ─────────────────────────────────────
     static void exibirMenu() {
-        System.out.println("\n╔══════════════════════════════════╗");
-        System.out.println("      🏨  Hotel Sistema           ");
-        System.out.println("╠══════════════════════════════════╣");
-        System.out.println("  1 - Fazer Reserva               ");
-        System.out.println("  2 - Cancelar Reserva            ");
-        System.out.println("  3 - Listar Reservas             ");
-        System.out.println("  4 - Ver Quartos Disponíveis     ");
-        System.out.println("  5 - Sair                        ");
-        System.out.println("╚══════════════════════════════════╝");
-        System.out.print("Escolha uma opção: ");
+        System.out.println("\n╔══════════════════════════════════════╗");
+        System.out.println("        🏨  Sistema de Reservas         ");
+        System.out.println("╠══════════════════════════════════════╣");
+        System.out.println("  1 - Nova Reserva                     ");
+        System.out.println("  2 - Listar Reservas                  ");
+        System.out.println("  3 - Buscar por Nome                  ");
+        System.out.println("  4 - Ordenar por Dias (decrescente)   ");
+        System.out.println("  5 - Sair                             ");
+        System.out.println("╚══════════════════════════════════════╝");
+        System.out.print("  Opção: ");
     }
 
-    static void fazerReserva() {
-        System.out.println("\n── Nova Reserva ─────────────────");
+    // ── Cadastrar nova reserva ─────────────────────────────
+    static void novaReserva() {
+        System.out.println("\n── Nova Reserva ──────────────────────");
 
-        // Verifica quartos disponíveis
-        boolean temDisponivel = false;
-        for (Quarto q : quartos) {
-            if (q.isDisponivel()) { temDisponivel = true; break; }
-        }
-        if (!temDisponivel) {
-            System.out.println("⚠ Nenhum quarto disponível no momento!");
+        // Verifica capacidade
+        if (total >= CAPACIDADE) {
+            System.out.println("⚠  Capacidade máxima (" + CAPACIDADE + " reservas) atingida!");
             return;
         }
 
-        // Dados do hóspede
         scanner.nextLine();
+
+        // Nome
         System.out.print("Nome do hóspede: ");
-        String nome = scanner.nextLine();
+        String nome = scanner.nextLine().trim();
 
-        System.out.print("CPF: ");
-        String cpf = scanner.nextLine();
+        // Tipo de quarto
+        System.out.println("Tipos disponíveis: Standard | Luxo | Presidencial");
+        System.out.print("Tipo do quarto: ");
+        String tipo = scanner.nextLine().trim();
 
-        System.out.print("Telefone: ");
-        String telefone = scanner.nextLine();
-
-        Hospede hospede = new Hospede(nome, cpf, telefone);
-
-        // Exibe quartos disponíveis
-        listarQuartos();
-
-        System.out.print("Digite o número do quarto desejado: ");
-        int numeroQuarto = scanner.nextInt();
-
-        Quarto quartoEscolhido = null;
-        for (Quarto q : quartos) {
-            if (q.getNumero() == numeroQuarto && q.isDisponivel()) {
-                quartoEscolhido = q;
-                break;
-            }
-        }
-
-        if (quartoEscolhido == null) {
-            System.out.println("⚠ Quarto inválido ou indisponível!");
-            return;
-        }
-
-        // Número de dias
+        // Número de dias (mínimo 1)
         int dias = 0;
-        while (dias <= 0) {
-            System.out.print("Quantidade de diárias: ");
-            dias = scanner.nextInt();
-            if (dias <= 0) System.out.println("⚠ Digite um número válido!");
+        while (dias < 1) {
+            System.out.print("Número de dias (mínimo 1): ");
+            dias = lerInt();
+            if (dias < 1) System.out.println("⚠  Número de dias inválido!");
         }
 
-        reservas[totalReservas] = new Reserva(hospede, quartoEscolhido, dias);
-        totalReservas++;
+        // Valor da diária (maior que zero)
+        double diaria = 0;
+        while (diaria <= 0) {
+            System.out.print("Valor da diária (R$): ");
+            diaria = lerDouble();
+            if (diaria <= 0) System.out.println("⚠  Valor da diária inválido!");
+        }
 
-        System.out.println("\n✔ Reserva realizada com sucesso!");
-        reservas[totalReservas - 1].exibirReserva();
+        // Cria e armazena a reserva
+        reservas[total] = new Reserva(nome, tipo, dias, diaria);
+        total++;
+
+        System.out.println("\n✔  Reserva cadastrada com sucesso!");
+        System.out.println(reservas[total - 1]);
     }
 
-    static void cancelarReserva() {
-        if (totalReservas == 0) {
-            System.out.println("\n⚠ Nenhuma reserva cadastrada!");
-            return;
-        }
-
-        System.out.println("\n── Cancelar Reserva ─────────────");
-        listarReservas();
-
-        System.out.print("Digite o número do quarto para cancelar: ");
-        int numero = scanner.nextInt();
-
-        boolean encontrou = false;
-        for (int i = 0; i < totalReservas; i++) {
-            if (reservas[i].getQuarto().getNumero() == numero
-                    && reservas[i].getStatus().equals("Ativa")) {
-                reservas[i].cancelar();
-                System.out.println("\n✔ Reserva do quarto " + numero + " cancelada!");
-                encontrou = true;
-                break;
-            }
-        }
-
-        if (!encontrou) System.out.println("⚠ Reserva ativa não encontrada para esse quarto.");
-    }
-
+    // ── Listar todas as reservas ───────────────────────────
     static void listarReservas() {
-        System.out.println("\n── Reservas ─────────────────────");
-        if (totalReservas == 0) {
+        System.out.println("\n── Reservas Cadastradas ──────────────");
+
+        if (total == 0) {
             System.out.println("  Nenhuma reserva cadastrada.");
             return;
         }
-        for (int i = 0; i < totalReservas; i++) {
-            reservas[i].exibirReserva();
+
+        for (int i = 0; i < total; i++) {
+            System.out.println(reservas[i]);
         }
+        System.out.println("  Total de reservas: " + total);
     }
 
-    static void listarQuartos() {
-        System.out.println("\n── Quartos Disponíveis ──────────");
-        boolean temDisponivel = false;
-        for (Quarto q : quartos) {
-            if (q.isDisponivel()) {
-                q.exibirDados();
-                System.out.println();
-                temDisponivel = true;
+    // ── Buscar reserva por parte do nome ───────────────────
+    static void buscarPorNome() {
+        System.out.println("\n── Buscar por Nome ───────────────────");
+
+        if (total == 0) {
+            System.out.println("  Nenhuma reserva cadastrada.");
+            return;
+        }
+
+        scanner.nextLine();
+        System.out.print("Digite o nome (ou parte dele): ");
+        String busca = scanner.nextLine().trim().toLowerCase();
+
+        boolean encontrou = false;
+        for (int i = 0; i < total; i++) {
+            if (reservas[i].getNomeHospede().toLowerCase().contains(busca)) {
+                System.out.println(reservas[i]);
+                encontrou = true;
             }
         }
-        if (!temDisponivel) System.out.println("  Nenhum quarto disponível.");
+
+        if (!encontrou) System.out.println("⚠  Nenhuma reserva encontrada para \"" + busca + "\".");
+    }
+
+    // ── Ordenar por número de dias (decrescente) ───────────
+    static void ordenarPorDias() {
+        if (total == 0) {
+            System.out.println("\n⚠  Nenhuma reserva para ordenar.");
+            return;
+        }
+
+        // Bubble Sort decrescente
+        for (int i = 0; i < total - 1; i++) {
+            for (int j = 0; j < total - i - 1; j++) {
+                if (reservas[j].getNumeroDias() < reservas[j + 1].getNumeroDias()) {
+                    Reserva temp    = reservas[j];
+                    reservas[j]     = reservas[j + 1];
+                    reservas[j + 1] = temp;
+                }
+            }
+        }
+
+        System.out.println("\n✔  Reservas ordenadas por dias (maior → menor)!");
+        listarReservas();
+    }
+
+    // ── Mensagem de saída ──────────────────────────────────
+    static void mensagemSaida() {
+        System.out.println("\n╔══════════════════════════════════════╗");
+        System.out.println("   Obrigado por usar o Sistema Hotel!  ");
+        System.out.println("         Até a próxima! 🏨             ");
+        System.out.println("╚══════════════════════════════════════╝");
+    }
+
+    // ── Helpers de leitura segura ──────────────────────────
+    static int lerInt() {
+        while (!scanner.hasNextInt()) {
+            System.out.print("⚠  Digite um número válido: ");
+            scanner.next();
+        }
+        return scanner.nextInt();
+    }
+
+    static double lerDouble() {
+        while (!scanner.hasNextDouble()) {
+            System.out.print("⚠  Digite um valor válido: ");
+            scanner.next();
+        }
+        return scanner.nextDouble();
     }
 }
