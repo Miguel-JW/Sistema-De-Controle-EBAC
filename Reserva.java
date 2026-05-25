@@ -1,36 +1,52 @@
 public class Reserva {
-    private Hospede hospede;
-    private Quarto quarto;
-    private int numeroDias;
-    private String status;
 
-    public Reserva(Hospede hospede, Quarto quarto, int numeroDias) {
-        this.hospede = hospede;
-        this.quarto = quarto;
-        this.numeroDias = numeroDias;
-        this.status = "Ativa";
-        quarto.setDisponivel(false);
+    // ── Atributos ──────────────────────────────────────────
+    private String nomeHospede;
+    private String tipoQuarto;
+    private int    numeroDias;
+    private double valorDiaria;
+
+    // ── Construtor completo ────────────────────────────────
+    public Reserva(String nomeHospede, String tipoQuarto, int numeroDias, double valorDiaria) {
+        this.nomeHospede  = nomeHospede;
+        this.tipoQuarto   = tipoQuarto;
+        this.numeroDias   = numeroDias;
+        this.valorDiaria  = valorDiaria;
     }
 
-    public Quarto getQuarto() { return quarto; }
-    public String getStatus() { return status; }
-
-    public void cancelar() {
-        this.status = "Cancelada";
-        quarto.setDisponivel(true);
+    // ── Sobrecarga: apenas nome e tipo de quarto ───────────
+    public Reserva(String nomeHospede, String tipoQuarto) {
+        this(nomeHospede, tipoQuarto, 1, 100.0);
     }
 
-    public double calcularTotal() {
-        return quarto.getPrecoPorNoite() * numeroDias;
+    // ── Getters e Setters ──────────────────────────────────
+    public String getNomeHospede()  { return nomeHospede; }
+    public String getTipoQuarto()   { return tipoQuarto; }
+    public int    getNumeroDias()   { return numeroDias; }
+    public double getValorDiaria()  { return valorDiaria; }
+
+    public void setNomeHospede(String nomeHospede)  { this.nomeHospede = nomeHospede; }
+    public void setTipoQuarto(String tipoQuarto)    { this.tipoQuarto  = tipoQuarto; }
+    public void setNumeroDias(int numeroDias)        { this.numeroDias  = numeroDias; }
+    public void setValorDiaria(double valorDiaria)  { this.valorDiaria = valorDiaria; }
+
+    // ── Calcula valor total da hospedagem ──────────────────
+    public double calcularValorTotal() {
+        return numeroDias * valorDiaria;
     }
 
-    public void exibirReserva() {
-        System.out.println("┌─────────────────────────────────┐");
-        hospede.exibirDados();
-        quarto.exibirDados();
-        System.out.println("  Dias:      " + numeroDias);
-        System.out.printf("  Total:     R$ %.2f%n", calcularTotal());
-        System.out.println("  Status:    " + status);
-        System.out.println("└─────────────────────────────────┘");
+    // ── Representação em texto ─────────────────────────────
+    @Override
+    public String toString() {
+        return String.format(
+            "┌─────────────────────────────────────┐%n" +
+            "  Hóspede:      %-25s%n" +
+            "  Quarto:       %-25s%n" +
+            "  Dias:         %-25d%n" +
+            "  Diária:       R$ %-22.2f%n" +
+            "  Total:        R$ %-22.2f%n" +
+            "└─────────────────────────────────────┘",
+            nomeHospede, tipoQuarto, numeroDias, valorDiaria, calcularValorTotal()
+        );
     }
 }
